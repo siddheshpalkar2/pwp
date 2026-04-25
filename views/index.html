@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Learning Companion — AI Tutor</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar" aria-label="Main navigation">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon" aria-hidden="true">🎓</span>
+        <span class="logo-text">LearnAI</span>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">&#9776;</button>
+    </div>
+
+    <ul class="nav-list" role="list">
+      <li>
+        <button class="nav-item active" data-page="chat" aria-current="page">
+          <span class="nav-icon" aria-hidden="true">💬</span>
+          <span class="nav-label">AI Tutor</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-item" data-page="quiz">
+          <span class="nav-icon" aria-hidden="true">📝</span>
+          <span class="nav-label">Quiz</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-item" data-page="progress">
+          <span class="nav-icon" aria-hidden="true">📊</span>
+          <span class="nav-label">Progress</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div class="level-selector">
+        <label for="globalLevel" class="level-label">Level</label>
+        <select id="globalLevel" aria-label="Learning level">
+          <option value="beginner">Beginner</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main" id="main">
+
+    <!-- Header -->
+    <header class="topbar">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">&#9776;</button>
+      <div class="topbar-title" id="pageTitle">AI Tutor</div>
+      <div class="topbar-right">
+        <div class="streak-badge" id="streakBadge" title="Learning streak">
+          <span aria-hidden="true">🔥</span>
+          <span id="streakCount">0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Chat Page -->
+    <section class="page active" id="page-chat" aria-label="AI Tutor chat">
+      <div class="chat-container">
+        <div class="chat-settings">
+          <div class="input-group">
+            <label for="topicInput">Topic</label>
+            <input type="text" id="topicInput" placeholder="e.g. Photosynthesis, Python, History..." maxlength="100" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="messages" id="messages" aria-live="polite" aria-label="Chat messages">
+          <div class="welcome-msg">
+            <div class="welcome-icon" aria-hidden="true">🤖</div>
+            <h2>Hello! I'm your AI Learning Companion.</h2>
+            <p>Enter a topic above and ask me anything. I'll adapt my explanations to your level.</p>
+            <div class="quick-starts">
+              <p class="quick-label">Try asking:</p>
+              <button class="quick-btn" data-msg="Explain this topic to me like I'm a complete beginner">Start from basics</button>
+              <button class="quick-btn" data-msg="Give me a quick overview of this topic">Quick overview</button>
+              <button class="quick-btn" data-msg="What are the key concepts I need to know?">Key concepts</button>
+              <button class="quick-btn" data-msg="Give me a real-world example">Real-world example</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-input-area">
+          <div class="chat-input-wrapper">
+            <textarea
+              id="chatInput"
+              placeholder="Ask anything about your topic..."
+              rows="1"
+              maxlength="1000"
+              aria-label="Chat message input"
+            ></textarea>
+            <button id="sendBtn" class="send-btn" aria-label="Send message">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </div>
+          <div class="chat-hint">Press <kbd>Enter</kbd> to send, <kbd>Shift+Enter</kbd> for new line</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quiz Page -->
+    <section class="page" id="page-quiz" aria-label="Quiz section" hidden>
+      <div class="quiz-container">
+        <div class="quiz-setup" id="quizSetup">
+          <div class="section-header">
+            <h2>Test Your Knowledge</h2>
+            <p>Generate a personalized quiz on any topic</p>
+          </div>
+          <div class="quiz-form">
+            <div class="form-row">
+              <div class="input-group">
+                <label for="quizTopic">Topic</label>
+                <input type="text" id="quizTopic" placeholder="e.g. World War II, JavaScript, Biology..." maxlength="100" />
+              </div>
+              <div class="input-group">
+                <label for="quizCount">Questions</label>
+                <select id="quizCount">
+                  <option value="3">3 questions</option>
+                  <option value="4" selected>4 questions</option>
+                  <option value="5">5 questions</option>
+                  <option value="6">6 questions</option>
+                </select>
+              </div>
+            </div>
+            <button id="generateQuizBtn" class="btn btn-primary btn-large">
+              <span class="btn-icon" aria-hidden="true">✨</span> Generate Quiz
+            </button>
+          </div>
+        </div>
+
+        <div class="quiz-loading hidden" id="quizLoading" aria-live="polite">
+          <div class="spinner" aria-hidden="true"></div>
+          <p>Generating your quiz...</p>
+        </div>
+
+        <div class="quiz-active hidden" id="quizActive">
+          <div class="quiz-header">
+            <div class="quiz-meta">
+              <span id="quizTopicLabel" class="quiz-topic-badge"></span>
+              <span class="quiz-progress-text">Question <span id="currentQ">1</span> of <span id="totalQ">4</span></span>
+            </div>
+            <div class="quiz-progress-bar">
+              <div class="quiz-progress-fill" id="quizProgressFill"></div>
+            </div>
+          </div>
+
+          <div class="question-card" id="questionCard">
+            <p class="question-text" id="questionText"></p>
+            <ul class="options-list" id="optionsList" role="list"></ul>
+            <div class="explanation hidden" id="explanation" aria-live="polite"></div>
+            <button id="nextBtn" class="btn btn-primary hidden">Next Question →</button>
+          </div>
+        </div>
+
+        <div class="quiz-results hidden" id="quizResults">
+          <div class="results-card">
+            <div class="result-icon" id="resultIcon" aria-hidden="true"></div>
+            <h2 id="resultTitle"></h2>
+            <div class="score-display">
+              <span class="score-num" id="scoreNum"></span>
+              <span class="score-total" id="scoreTot"></span>
+            </div>
+            <p class="score-pct" id="scorePct"></p>
+            <div class="result-actions">
+              <button id="retryBtn" class="btn btn-secondary">Retry Quiz</button>
+              <button id="newQuizBtn" class="btn btn-primary">New Topic</button>
+              <button id="studyTopicBtn" class="btn btn-outline">Study This Topic</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Progress Page -->
+    <section class="page" id="page-progress" aria-label="Learning progress" hidden>
+      <div class="progress-container">
+        <div class="section-header">
+          <h2>Your Learning Journey</h2>
+          <button id="clearDataBtn" class="btn btn-danger-outline btn-sm">Clear All Data</button>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true">📚</div>
+            <div class="stat-info">
+              <div class="stat-num" id="statTopics">0</div>
+              <div class="stat-label">Topics Explored</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true">✅</div>
+            <div class="stat-info">
+              <div class="stat-num" id="statCompleted">0</div>
+              <div class="stat-label">Topics Mastered</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true">📝</div>
+            <div class="stat-info">
+              <div class="stat-num" id="statQuizzes">0</div>
+              <div class="stat-label">Quizzes Taken</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true">⭐</div>
+            <div class="stat-info">
+              <div class="stat-num" id="statAvg">0%</div>
+              <div class="stat-label">Avg Quiz Score</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true">🔥</div>
+            <div class="stat-info">
+              <div class="stat-num" id="statStreak">0</div>
+              <div class="stat-label">Day Streak</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="progress-sections">
+          <div class="progress-panel">
+            <h3>Topics</h3>
+            <div id="topicsList" class="topics-list" aria-label="Studied topics"></div>
+          </div>
+          <div class="progress-panel">
+            <h3>Recent Quizzes</h3>
+            <div id="scoresList" class="scores-list" aria-label="Quiz scores"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/js/main.js"></script>
+  <script src="/js/chat.js"></script>
+  <script src="/js/quiz.js"></script>
+  <script src="/js/progress.js"></script>
+</body>
+</html>
