@@ -6,12 +6,17 @@
   const topicInput = document.getElementById('topicInput');
   const levelSelect = document.getElementById('globalLevel');
 
+  // Track welcome screen presence with a flag — avoid repeated DOM queries
+  let welcomeVisible = true;
+
   function getLevel() { return levelSelect.value; }
   function getTopic() { return topicInput.value.trim() || 'general'; }
 
   function appendMsg(role, content) {
-    const welcome = messagesEl.querySelector('.welcome-msg');
-    if (welcome) welcome.remove();
+    if (welcomeVisible) {
+      messagesEl.querySelector('.welcome-msg')?.remove();
+      welcomeVisible = false;
+    }
 
     const wrap = document.createElement('div');
     wrap.className = `msg ${role}`;
@@ -61,17 +66,22 @@
   }
 
   function formatText(text) {
-    return text
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    // Escape HTML first, then apply safe markdown-like formatting
+    const escaped = window.escapeHtml(text);
+
+    return escaped
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/`(.+?)`/g, '<code>$1</code>')
       .replace(/^#{1,3} (.+)$/gm, '<strong>$1</strong>')
-      .replace(/^[-•] (.+)$/gm, '<li>$1</li>')
-      .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+      // Convert list lines to <li>, then wrap each contiguous block in <ul>
+      .replace(/((?:^[-•] .+\n?)+)/gm, (block) => {
+        const items = block.trim().replace(/^[-•] (.+)$/gm, '<li>$1</li>');
+        return `<ul>${items}</ul>`;
+      })
       .replace(/\n{2,}/g, '</p><p>')
       .replace(/\n/g, '<br>')
-      .replace(/^(.+)$/, '<p>$1</p>');
+      .replace(/^([^<].*)$/gm, '<p>$1</p>');
   }
 
   async function sendMessage() {
@@ -99,17 +109,15 @@
       appendMsg('assistant', data.response);
     } catch (err) {
       hideTyping();
-      appendMsg('assistant', `Sorry, I ran into an error: ${err.message}. Please try again.`);
+      appendMsg('assistant', `Sorry, I ran into an error: ${window.escapeHtml(err.message)}. Please try again.`);
     } finally {
       sendBtn.disabled = false;
       inputEl.focus();
     }
   }
 
-  // Send on button click
   sendBtn.addEventListener('click', sendMessage);
 
-  // Send on Enter (not Shift+Enter)
   inputEl.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -117,26 +125,24 @@
     }
   });
 
-  // Auto-resize textarea
   inputEl.addEventListener('input', () => {
     inputEl.style.height = 'auto';
     inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
   });
 
-  // Quick start buttons
-  document.querySelectorAll('.quick-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const msg = btn.dataset.msg;
-      if (!topicInput.value.trim()) {
-        topicInput.focus();
-        topicInput.placeholder = 'Enter a topic first!';
-        setTimeout(() => {
-          topicInput.placeholder = 'e.g. Photosynthesis, Python, History...';
-        }, 2000);
-        return;
-      }
-      inputEl.value = msg;
-      sendMessage();
-    });
+  // Quick start buttons — use a single delegated listener
+  messagesEl.addEventListener('click', e => {
+    const btn = e.target.closest('.quick-btn');
+    if (!btn) return;
+    if (!topicInput.value.trim()) {
+      topicInput.focus();
+      topicInput.placeholder = 'Enter a topic first!';
+      setTimeout(() => {
+        topicInput.placeholder = 'e.g. Photosynthesis, Python, History...';
+      }, 2000);
+      return;
+    }
+    inputEl.value = btn.dataset.msg;
+    sendMessage();
   });
 })();

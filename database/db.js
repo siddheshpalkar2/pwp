@@ -6,6 +6,9 @@ const db = new sqlite3.Database(DB_PATH);
 
 function init() {
   db.serialize(() => {
+    // WAL mode: better read concurrency and crash safety
+    db.run(`PRAGMA journal_mode = WAL`);
+
     db.run(`CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
@@ -14,15 +17,15 @@ function init() {
 
     db.run(`CREATE TABLE IF NOT EXISTS learning_progress (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER DEFAULT 1,
+      user_id INTEGER NOT NULL DEFAULT 1,
       topic TEXT NOT NULL,
-      completed INTEGER DEFAULT 0,
+      completed INTEGER NOT NULL DEFAULT 0,
       last_studied DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
     db.run(`CREATE TABLE IF NOT EXISTS quiz_scores (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER DEFAULT 1,
+      user_id INTEGER NOT NULL DEFAULT 1,
       topic TEXT NOT NULL,
       score INTEGER NOT NULL,
       total INTEGER NOT NULL,
@@ -31,14 +34,21 @@ function init() {
 
     db.run(`CREATE TABLE IF NOT EXISTS chat_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER DEFAULT 1,
+      user_id INTEGER NOT NULL DEFAULT 1,
       role TEXT NOT NULL,
       content TEXT NOT NULL,
       topic TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    db.run(`INSERT OR IGNORE INTO users (id, username) VALUES (1, 'learner')`);
+    // Indexes for hot query paths (user_id + topic lookups)
+    db.run(`CREATE INDEX IF NOT EXISTS idx_progress_user_topic ON learning_progress(user_id, topic)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_scores_user ON quiz_scores(user_id, taken_at DESC)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_chat_user_topic ON chat_history(user_id, topic, created_at DESC)`);
+
+    db.run(`INSERT OR IGNORE INTO users (id, username) VALUES (1, 'learner')`, err => {
+      if (err) console.error('DB init error:', err.message);
+    });
   });
 }
 

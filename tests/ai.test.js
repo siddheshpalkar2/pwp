@@ -205,12 +205,10 @@ describe('POST /api/ai/quiz/generate', () => {
 describe('Error handling', () => {
   test('returns 500 when Gemini API fails on chat', async () => {
     const { GoogleGenerativeAI } = require('@google/generative-ai');
-    // mock.results[0].value is the object returned by new GoogleGenerativeAI()
-    const genAI = GoogleGenerativeAI.mock.results[0].value;
-    genAI.getGenerativeModel.mockReturnValueOnce({
-      startChat: jest.fn().mockReturnValue({
-        sendMessage: jest.fn().mockRejectedValue(new Error('API quota exceeded'))
-      })
+    // model is cached — reach the startChat mock on the already-returned model object
+    const modelObj = GoogleGenerativeAI.mock.results[0].value.getGenerativeModel.mock.results[0].value;
+    modelObj.startChat.mockReturnValueOnce({
+      sendMessage: jest.fn().mockRejectedValue(new Error('API quota exceeded'))
     });
 
     const res = await request(app)
@@ -223,11 +221,9 @@ describe('Error handling', () => {
 
   test('returns 500 when quiz JSON is malformed', async () => {
     const { GoogleGenerativeAI } = require('@google/generative-ai');
-    const genAI = GoogleGenerativeAI.mock.results[0].value;
-    genAI.getGenerativeModel.mockReturnValueOnce({
-      generateContent: jest.fn().mockResolvedValue({
-        response: { text: () => 'not valid json at all' }
-      })
+    const modelObj = GoogleGenerativeAI.mock.results[0].value.getGenerativeModel.mock.results[0].value;
+    modelObj.generateContent.mockResolvedValueOnce({
+      response: { text: () => 'not valid json at all' }
     });
 
     const res = await request(app)

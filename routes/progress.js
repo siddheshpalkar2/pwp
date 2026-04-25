@@ -4,13 +4,16 @@ const db = require('../database/db');
 
 router.get('/summary', async (req, res) => {
   try {
-    const topics = await db.all(
-      `SELECT topic, completed, last_studied FROM learning_progress WHERE user_id = 1 ORDER BY last_studied DESC`
-    );
-
-    const scores = await db.all(
-      `SELECT topic, score, total, taken_at FROM quiz_scores WHERE user_id = 1 ORDER BY taken_at DESC LIMIT 20`
-    );
+    const [topics, scores] = await Promise.all([
+      db.all(
+        `SELECT topic, completed, last_studied FROM learning_progress
+         WHERE user_id = 1 ORDER BY last_studied DESC`
+      ),
+      db.all(
+        `SELECT topic, score, total, taken_at FROM quiz_scores
+         WHERE user_id = 1 ORDER BY taken_at DESC LIMIT 20`
+      )
+    ]);
 
     const totalQuizzes = scores.length;
     const avgScore = totalQuizzes > 0
@@ -29,13 +32,17 @@ router.get('/summary', async (req, res) => {
 router.post('/quiz-score', async (req, res) => {
   const { topic, score, total } = req.body;
 
-  if (!topic || score === undefined || !total) {
+  if (!topic || score == null || !total) {
     return res.status(400).json({ error: 'topic, score, and total are required' });
   }
 
+  const safeTotal = Math.max(parseInt(total, 10), 1);
+  const safeScore = Math.min(Math.max(parseInt(score, 10), 0), safeTotal);
   const safeTopic = String(topic).slice(0, 100);
-  const safeScore = Math.min(Math.max(parseInt(score), 0), parseInt(total));
-  const safeTotal = Math.max(parseInt(total), 1);
+
+  if (isNaN(safeScore) || isNaN(safeTotal)) {
+    return res.status(400).json({ error: 'score and total must be numbers' });
+  }
 
   try {
     await db.run(
@@ -59,11 +66,14 @@ router.post('/quiz-score', async (req, res) => {
 
 router.delete('/clear', async (req, res) => {
   try {
-    await db.run(`DELETE FROM chat_history WHERE user_id = 1`);
-    await db.run(`DELETE FROM learning_progress WHERE user_id = 1`);
-    await db.run(`DELETE FROM quiz_scores WHERE user_id = 1`);
+    await Promise.all([
+      db.run(`DELETE FROM chat_history WHERE user_id = 1`),
+      db.run(`DELETE FROM learning_progress WHERE user_id = 1`),
+      db.run(`DELETE FROM quiz_scores WHERE user_id = 1`)
+    ]);
     res.json({ cleared: true });
   } catch (err) {
+    console.error('Clear error:', err.message);
     res.status(500).json({ error: 'Failed to clear data' });
   }
 });
@@ -78,15 +88,20 @@ async function calcStreak() {
 
   if (rows.length === 0) return 0;
 
-  let streak = 0;
-  let today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Use UTC date string to avoid timezone-dependent Date arithmetic
+  const todayStr = new Date().toISOString().slice(0, 10);
 
+  let streak = 0;
   for (const row of rows) {
-    const day = new Date(row.day);
-    const diff = Math.round((today - day) / 86400000);
-    if (diff === streak) streak++;
-    else if (diff > streak) break;
+    const expectedDate = new Date(todayStr);
+    expectedDate.setUTCDate(expectedDate.getUTCDate() - streak);
+    const expected = expectedDate.toISOString().slice(0, 10);
+
+    if (row.day === expected) {
+      streak++;
+    } else {
+      break;
+    }
   }
 
   return streak;
